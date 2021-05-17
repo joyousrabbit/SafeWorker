@@ -16,7 +16,7 @@ function btn1_timer_fn() {
   var d = new Date();
   var n = d.getTime()/1000;
   var time_diff = n-btn1_start_time;
-  if(time_diff>=2.5){
+  if(time_diff>=2){
     btn1_long_trigger = true;
     clearInterval(btn1_timer);
     btn1_long();
@@ -49,7 +49,7 @@ function btn2_timer_fn() {
   var d = new Date();
   var n = d.getTime()/1000;
   var time_diff = n-btn2_start_time;
-  if(time_diff>=2.5){
+  if(time_diff>=2){
     btn2_long_trigger = true;
     clearInterval(btn2_timer);
     btn2_long();
@@ -88,7 +88,7 @@ function btn4_timer_fn() {
   var d = new Date();
   var n = d.getTime()/1000;
   var time_diff = n-btn4_start_time;
-  if(time_diff>=2.5){
+  if(time_diff>=2){
     btn4_long_trigger = true;
     clearInterval(btn4_timer);
     btn4_long();
@@ -121,7 +121,7 @@ function btn5_timer_fn() {
   var d = new Date();
   var n = d.getTime()/1000;
   var time_diff = n-btn5_start_time;
-  if(time_diff>=2.5){
+  if(time_diff>=2){
     btn5_long_trigger = true;
     clearInterval(btn5_timer);
     btn5_long();
@@ -140,47 +140,16 @@ setWatch(function(e) {
    }
 }, BTN5, { repeat:true, edge:'falling' });
 
-// Load fonts
-require("Font7x11Numeric7Seg").add(Graphics);
-// position on screen
-const X = 210, Y = 140;
-
-function draw() {
-  // work out how to display the current time
-  var d = new Date();
-  var h = d.getHours(), m = d.getMinutes();
-  var time = (" "+h).substr(-2) + ":" + ("0"+m).substr(-2);
-  // Reset the state of the graphics library
-  g.reset();
-  // draw the current time (4x size 7 segment)
-  g.setFont("7x11Numeric7Seg",6);
-  g.setFontAlign(1,1); // align right bottom
-  g.drawString(time, X, Y, true /*clear background*/);
-  // draw the seconds (2x size 7 segment)
-  g.setFont("7x11Numeric7Seg",2);
-  g.drawString(("0"+d.getSeconds()).substr(-2), X+30, Y, true /*clear background*/);
-  // draw the date, in a normal font
-  g.setFont("6x8",2);
-  g.setFontAlign(0,1); // align center bottom
-  // pad the date - this clears the background if the date were to change length
-  var dateStr = "    "+require("locale").date(d)+"    ";
-  g.drawString(dateStr, g.getWidth()/2, Y+20, true /*clear background*/);
+function lcd_on(){
+  console.log('lcd on');
 }
-
-// Clear the screen once, at startup
-g.clear();
-// draw immediately at first
-draw();
-var secondInterval = setInterval(draw, 1000);
-// Stop updates when LCD is off, restart when on
+function lcd_off(){
+  console.log('lcd off');
+}
 Bangle.on('lcdPower',on=>{
-  if (secondInterval) clearInterval(secondInterval);
-  secondInterval = undefined;
   if (on) {
-    secondInterval = setInterval(draw, 1000);
-    draw(); // draw immediately
+    lcd_on();
+  }else{
+    lcd_off();
   }
 });
-// Load widgets
-Bangle.loadWidgets();
-Bangle.drawWidgets();
