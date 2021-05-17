@@ -2,6 +2,144 @@
 //Bangle.loadWidgets();
 //Bangle.drawWidgets();
 
+//btn1
+function btn1_short(){
+  console.log('btn1 short');
+}
+function btn1_long(){
+  console.log('btn1 long');
+}
+btn1_start_time = null;
+btn1_timer = null;
+btn1_long_trigger = false;
+function btn1_timer_fn() {
+  var d = new Date();
+  var n = d.getTime()/1000;
+  var time_diff = n-btn1_start_time;
+  if(time_diff>=2.5){
+    btn1_long_trigger = true;
+    clearInterval(btn1_timer);
+    btn1_long();
+   }
+}
+setWatch(function(e) {
+  btn1_start_time = e.time;
+  btn1_timer = setInterval(btn1_timer_fn, 1000);
+}, BTN1, { repeat:true, edge:'rising' });
+setWatch(function(e) {
+  clearInterval(btn1_timer);
+  if(btn1_long_trigger){
+    btn1_long_trigger = false;
+   }else{
+     btn1_short();
+   }
+}, BTN1, { repeat:true, edge:'falling' });
+
+//btn2
+function btn2_short(){
+  console.log('btn2 short');
+}
+function btn2_long(){
+  console.log('btn2 long');
+}
+btn2_start_time = null;
+btn2_timer = null;
+btn2_long_trigger = false;
+function btn2_timer_fn() {
+  var d = new Date();
+  var n = d.getTime()/1000;
+  var time_diff = n-btn2_start_time;
+  if(time_diff>=2.5){
+    btn2_long_trigger = true;
+    clearInterval(btn2_timer);
+    btn2_long();
+   }
+}
+setWatch(function(e) {
+  btn2_start_time = e.time;
+  btn2_timer = setInterval(btn2_timer_fn, 1000);
+}, BTN2, { repeat:true, edge:'rising' });
+setWatch(function(e) {
+  clearInterval(btn2_timer);
+  if(btn2_long_trigger){
+    btn2_long_trigger = false;
+   }else{
+     btn2_short();
+   }
+}, BTN2, { repeat:true, edge:'falling' });
+
+//btn3
+function btn3_short(){
+  console.log('btn3 short');
+}
+setWatch(btn3_short, BTN3, { repeat:true, edge:'falling' });
+
+//btn4
+function btn4_short(){
+  console.log('btn4 short');
+}
+function btn4_long(){
+  console.log('btn4 long');
+}
+btn4_start_time = null;
+btn4_timer = null;
+btn4_long_trigger = false;
+function btn4_timer_fn() {
+  var d = new Date();
+  var n = d.getTime()/1000;
+  var time_diff = n-btn4_start_time;
+  if(time_diff>=2.5){
+    btn4_long_trigger = true;
+    clearInterval(btn4_timer);
+    btn4_long();
+   }
+}
+setWatch(function(e) {
+  btn4_start_time = e.time;
+  btn4_timer = setInterval(btn4_timer_fn, 1000);
+}, BTN4, { repeat:true, edge:'rising' });
+setWatch(function(e) {
+  clearInterval(btn4_timer);
+  if(btn4_long_trigger){
+    btn4_long_trigger = false;
+   }else{
+     btn4_short();
+   }
+}, BTN4, { repeat:true, edge:'falling' });
+
+//btn5
+function btn5_short(){
+  console.log('btn5 short');
+}
+function btn5_long(){
+  console.log('btn5 long');
+}
+btn5_start_time = null;
+btn5_timer = null;
+btn5_long_trigger = false;
+function btn5_timer_fn() {
+  var d = new Date();
+  var n = d.getTime()/1000;
+  var time_diff = n-btn5_start_time;
+  if(time_diff>=2.5){
+    btn5_long_trigger = true;
+    clearInterval(btn5_timer);
+    btn5_long();
+   }
+}
+setWatch(function(e) {
+  btn5_start_time = e.time;
+  btn5_timer = setInterval(btn5_timer_fn, 1000);
+}, BTN5, { repeat:true, edge:'rising' });
+setWatch(function(e) {
+  clearInterval(btn5_timer);
+  if(btn5_long_trigger){
+    btn5_long_trigger = false;
+   }else{
+     btn5_short();
+   }
+}, BTN5, { repeat:true, edge:'falling' });
+
 // Load fonts
 require("Font7x11Numeric7Seg").add(Graphics);
 // position on screen
@@ -46,5 +184,3 @@ Bangle.on('lcdPower',on=>{
 // Load widgets
 Bangle.loadWidgets();
 Bangle.drawWidgets();
-// Show launcher when middle button pressed
-setWatch(Bangle.showLauncher, BTN2, { repeat: false, edge: "falling" });
