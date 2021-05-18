@@ -3,6 +3,11 @@ g.clear();
 Bangle.loadWidgets();
 Bangle.drawWidgets();
 
+function clear_bkg(){
+  g.setBgColor(0,0,0);
+  g.clearRect(0,24,240,240);
+}
+
 function draw_sos(){
   g.reset();
   g.setBgColor(1,0,0);
@@ -40,7 +45,7 @@ function draw_clock(){
 clock_interval = null;
 function trigger_idle(){
   current_state = 'idle';
-  g.clear();
+  clear_bkg();
   draw_clock();
   clock_interval = setInterval(draw_clock, 1000);
 }
