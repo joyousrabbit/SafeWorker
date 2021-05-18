@@ -16,15 +16,23 @@ function btn1_timer_fn() {
   var d = new Date();
   var n = d.getTime()/1000;
   var time_diff = n-btn1_start_time;
+  if(!BTN1.read()){
+    clearInterval(btn1_timer);
+   }
   if(time_diff>=2){
     btn1_long_trigger = true;
     clearInterval(btn1_timer);
     btn1_long();
    }
 }
-setWatch(function(e) {
-  btn1_start_time = e.time;
+function btn1_start_interval(){
+  var d = new Date();
+  var n = d.getTime()/1000;
+  btn1_start_time = n;
   btn1_timer = setInterval(btn1_timer_fn, 1000);
+}
+setWatch(function(e) {
+  btn1_start_interval();
 }, BTN1, { repeat:true, edge:'rising' });
 setWatch(function(e) {
   clearInterval(btn1_timer);
@@ -141,10 +149,13 @@ setWatch(function(e) {
 }, BTN5, { repeat:true, edge:'falling' });
 
 function lcd_on(){
-  console.log('lcd on');
+  //console.log('lcd on');
+  if(BTN1.read()){
+    btn1_start_interval();
+   }
 }
 function lcd_off(){
-  console.log('lcd off');
+  //console.log('lcd off');
 }
 Bangle.on('lcdPower',on=>{
   if (on) {
@@ -153,3 +164,7 @@ Bangle.on('lcdPower',on=>{
     lcd_off();
   }
 });
+
+Bangle.setLCDTimeout(5);
+Bangle.setLCDPower(false);
+//Bangle.setLCDPower(true);
