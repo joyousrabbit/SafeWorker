@@ -1,6 +1,67 @@
-//g.clear();
-//Bangle.loadWidgets();
-//Bangle.drawWidgets();
+g.clear();
+// Load widgets
+Bangle.loadWidgets();
+Bangle.drawWidgets();
+
+function draw_sos(){
+  g.reset();
+  g.setBgColor(1,0,0);
+  g.clearRect(0,24,240,240);
+  g.setFont("Vector",60);
+  g.setFontAlign(0,0);
+  g.drawString("SOS",120,120,true);
+  g.drawString("x",200,200,true);
+  g.reset();
+}
+
+require("Font7x11Numeric7Seg").add(Graphics);
+function draw_clock(){
+  const X = 210, Y = 140;
+  var d = new Date();
+  var h = d.getHours(), m = d.getMinutes();
+  var time = (" "+h).substr(-2) + ":" + ("0"+m).substr(-2);
+  // Reset the state of the graphics library
+  g.reset();
+  // draw the current time (4x size 7 segment)
+  g.setFont("7x11Numeric7Seg",6);
+  g.setFontAlign(1,1); // align right bottom
+  g.drawString(time, X, Y, true /*clear background*/);
+  // draw the seconds (2x size 7 segment)
+  g.setFont("7x11Numeric7Seg",2);
+  g.drawString(("0"+d.getSeconds()).substr(-2), X+30, Y, true /*clear background*/);
+  // draw the date, in a normal font
+  g.setFont("6x8",2);
+  g.setFontAlign(0,1); // align center bottom
+  // pad the date - this clears the background if the date were to change length
+  var dateStr = "    "+require("locale").date(d)+"    ";
+  g.drawString(dateStr, g.getWidth()/2, Y+20, true /*clear background*/);
+}
+
+clock_interval = null;
+function trigger_idle(){
+  current_state = 'idle';
+  g.clear();
+  draw_clock();
+  clock_interval = setInterval(draw_clock, 1000);
+}
+
+function trigger_sos(){
+  current_state = 'sos';
+  clearInterval(clock_interval);
+  draw_sos();
+  Bangle.buzz();
+}
+
+trigger_idle();
+function change_state(action){
+  if(action=='btn1long'){
+    trigger_sos();
+   }else if(action=='btn5'){
+     if(current_state=='sos'){
+       trigger_idle();
+     }
+   }
+}
 
 //btn1
 function btn1_short(){
@@ -8,6 +69,7 @@ function btn1_short(){
 }
 function btn1_long(){
   console.log('btn1 long');
+  change_state('btn1long');
 }
 btn1_start_time = null;
 btn1_timer = null;
@@ -118,6 +180,7 @@ setWatch(function(e) {
 //btn5
 function btn5_short(){
   console.log('btn5 short');
+  change_state('btn5');
 }
 function btn5_long(){
   console.log('btn5 long');
@@ -167,4 +230,5 @@ Bangle.on('lcdPower',on=>{
 
 Bangle.setLCDTimeout(5);
 Bangle.setLCDPower(false);
-//Bangle.setLCDPower(true);
+
+Bangle.setLCDPower(true);
