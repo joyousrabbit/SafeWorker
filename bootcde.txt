@@ -33,11 +33,13 @@ function draw_clock(){
 }
 
 clock_interval = null;
-function trigger_idle(){
-  current_state = 'idle';
+function start_clock(){
   clear_bkg();
   draw_clock();
   clock_interval = setInterval(draw_clock, 1000);
+}
+function stop_clock(){
+  clearInterval(clock_interval);
 }
 
 //sos
@@ -56,24 +58,39 @@ function sos(){
   Bangle.buzz();
   btdb.state = "sos";
 }
+function remove_sos(){
+  clear_bkg();
+  btdb.state="";
+  behavior_tree("");
+}
 
 //behavior tree
 btdb = {state:"idle",notification:[],protection:false};
-behavior_tree(trigger=""){
+function behavior_tree(trigger){
   stop_clock();
   if(trigger=="btn1_long"){
     sos();
+  }else if(btdb.state=="sos"){
+    if(trigger=="btn5"){
+      remove_sos();
+    }
+  }else if(Bangle.isLCDOn()){
+    if(false){
+    }else{
+      btdb.state="idle";
+      start_clock();
+    }
   }
 }
 
 
 //btn1
 function btn1_short(){
-  console.log('btn1 short');
+  //console.log('btn1 short');
 }
 function btn1_long(){
-  console.log('btn1 long');
-  change_state('btn1long');
+  //console.log('btn1 long');
+  behavior_tree('btn1_long');
 }
 btn1_start_time = null;
 btn1_timer = null;
@@ -111,10 +128,10 @@ setWatch(function(e) {
 
 //btn2
 function btn2_short(){
-  console.log('btn2 short');
+  //console.log('btn2 short');
 }
 function btn2_long(){
-  console.log('btn2 long');
+  //console.log('btn2 long');
 }
 btn2_start_time = null;
 btn2_timer = null;
@@ -144,16 +161,16 @@ setWatch(function(e) {
 
 //btn3
 function btn3_short(){
-  console.log('btn3 short');
+  //console.log('btn3 short');
 }
 setWatch(btn3_short, BTN3, { repeat:true, edge:'falling' });
 
 //btn4
 function btn4_short(){
-  console.log('btn4 short');
+  //console.log('btn4 short');
 }
 function btn4_long(){
-  console.log('btn4 long');
+  //console.log('btn4 long');
 }
 btn4_start_time = null;
 btn4_timer = null;
@@ -183,11 +200,11 @@ setWatch(function(e) {
 
 //btn5
 function btn5_short(){
-  console.log('btn5 short');
-  change_state('btn5');
+  //console.log('btn5 short');
+  behavior_tree('btn5');
 }
 function btn5_long(){
-  console.log('btn5 long');
+  //console.log('btn5 long');
 }
 btn5_start_time = null;
 btn5_timer = null;
@@ -220,11 +237,11 @@ function lcd_on(){
   if(BTN1.read()){
     btn1_start_interval();
    }
-  change_state('lcdon');
+  behavior_tree('lcdon');
 }
 function lcd_off(){
   //console.log('lcd off');
-  change_state('lcdoff');
+  behavior_tree('lcdoff');
 }
 Bangle.on('lcdPower',on=>{
   if (on) {
@@ -235,4 +252,4 @@ Bangle.on('lcdPower',on=>{
 });
 
 Bangle.setLCDTimeout(5);
-behavior_tree();
+behavior_tree("");
