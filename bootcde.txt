@@ -8,17 +8,7 @@ function clear_bkg(){
   g.clearRect(0,24,240,240);
 }
 
-function draw_sos(){
-  g.reset();
-  g.setBgColor(1,0,0);
-  g.clearRect(0,24,240,240);
-  g.setFont("Vector",60);
-  g.setFontAlign(0,0);
-  g.drawString("SOS",120,120,true);
-  g.drawString("x",200,200,true);
-  g.reset();
-}
-
+//clock
 require("Font7x11Numeric7Seg").add(Graphics);
 function draw_clock(){
   const X = 210, Y = 140;
@@ -39,7 +29,7 @@ function draw_clock(){
   g.setFontAlign(0,1); // align center bottom
   // pad the date - this clears the background if the date were to change length
   var dateStr = "    "+require("locale").date(d)+"    ";
-  g.drawString(dateStr, g.getWidth()/2, Y+20, true /*clear background*/);
+  g.drawString(dateStr, g.getWidth()/2, Y+30, true /*clear background*/);
 }
 
 clock_interval = null;
@@ -50,23 +40,32 @@ function trigger_idle(){
   clock_interval = setInterval(draw_clock, 1000);
 }
 
-function trigger_sos(){
-  current_state = 'sos';
-  clearInterval(clock_interval);
+//sos
+function draw_sos(){
+  g.reset();
+  g.setBgColor(1,0,0);
+  g.clearRect(0,24,240,240);
+  g.setFont("Vector",60);
+  g.setFontAlign(0,0);
+  g.drawString("SOS",120,120,true);
+  g.drawString("x",200,200,true);
+  g.reset();
+}
+function sos(){
   draw_sos();
   Bangle.buzz();
+  btdb.state = "sos";
 }
 
-trigger_idle();
-function change_state(action){
-  if(action=='btn1long'){
-    trigger_sos();
-   }else if(action=='btn5'){
-     if(current_state=='sos'){
-       trigger_idle();
-     }
-   }
+//behavior tree
+btdb = {state:"idle",notification:[],protection:false};
+behavior_tree(trigger=""){
+  stop_clock();
+  if(trigger=="btn1_long"){
+    sos();
+  }
 }
+
 
 //btn1
 function btn1_short(){
@@ -221,9 +220,11 @@ function lcd_on(){
   if(BTN1.read()){
     btn1_start_interval();
    }
+  change_state('lcdon');
 }
 function lcd_off(){
   //console.log('lcd off');
+  change_state('lcdoff');
 }
 Bangle.on('lcdPower',on=>{
   if (on) {
@@ -234,6 +235,4 @@ Bangle.on('lcdPower',on=>{
 });
 
 Bangle.setLCDTimeout(5);
-Bangle.setLCDPower(false);
-
-Bangle.setLCDPower(true);
+behavior_tree();
