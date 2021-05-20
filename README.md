@@ -11,4 +11,4 @@
 4) Press Btn 2 again by 3 seconds to desactive danger detection.
 
 The behavior tree is: 
-![Behavior Tree]("Banglejs_Safeworker.jpg")
+![Behavior Tree](Banglejs_Safeworker.jpg)
