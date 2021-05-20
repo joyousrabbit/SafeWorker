@@ -1,3 +1,4 @@
+E.setTimeZone(2);
 g.clear();
 // Load widgets
 Bangle.loadWidgets();
@@ -64,6 +65,9 @@ function remove_sos(){
   behavior_tree("");
 }
 
+//protection
+
+
 //behavior tree
 btdb = {state:"idle",notification:[],protection:false};
 function behavior_tree(trigger){
@@ -73,6 +77,12 @@ function behavior_tree(trigger){
   }else if(btdb.state=="sos"){
     if(trigger=="btn5"){
       remove_sos();
+    }
+  }else if(trigger=="btn2_long"){
+    if(btdb.protection==false){
+      protection_enable();
+    }else if(btdb.protection==true){
+      
     }
   }else if(Bangle.isLCDOn()){
     if(false){
@@ -132,6 +142,7 @@ function btn2_short(){
 }
 function btn2_long(){
   //console.log('btn2 long');
+  behavior_tree("btn2_long");
 }
 btn2_start_time = null;
 btn2_timer = null;
