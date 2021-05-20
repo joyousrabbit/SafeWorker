@@ -66,6 +66,24 @@ function remove_sos(){
 }
 
 //protection
+function draw_protection_icon(){
+  g.reset();
+  var img = require("heatshrink").decompress(atob("jEYwkBEDnu9wKKBhAKDBgv+BQoAB94LxhwLH8ALT9vd7wLH7oABC4Z2CBIQLCQQgfBAAXeBYgkBCwgiDDAoWFDAoWGX5hWDCw4MCBRIATA=="));
+  g.drawImage(img,28,0);
+}
+function delete_protection_icon(){
+  g.reset();
+  g.setColor(0,0,0);
+  g.fillRect(28, 0, 52, 24);
+}
+function protection_enable(){
+  draw_protection_icon();
+  btdb.protection = true;
+}
+function protection_disable(){
+  delete_protection_icon();
+  btdb.protection = false;
+}
 
 
 //behavior tree
@@ -82,7 +100,7 @@ function behavior_tree(trigger){
     if(btdb.protection==false){
       protection_enable();
     }else if(btdb.protection==true){
-      
+      protection_disable();
     }
   }else if(Bangle.isLCDOn()){
     if(false){
