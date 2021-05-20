@@ -10,3 +10,5 @@
 3) Press Btn 2 by 3 seconds to active (AI based) danger detection (screen must be on first);
 4) Press Btn 2 again by 3 seconds to desactive danger detection.
 
+The behavior tree is: 
+![Behavior Tree]("Banglejs_Safeworker.jpg")
