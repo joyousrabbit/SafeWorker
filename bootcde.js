@@ -89,24 +89,26 @@ function protection_disable(){
 //behavior tree
 btdb = {state:"idle",notification:[],protection:false};
 function behavior_tree(trigger){
-  stop_clock();
-  if(trigger=="btn1_long"){
-    sos();
-  }else if(btdb.state=="sos"){
-    if(trigger=="btn5"){
-      remove_sos();
-    }
-  }else if(trigger=="btn2_long"){
+  if(btdb.state!="sos"&&trigger=="btn2_long"){
     if(btdb.protection==false){
-      protection_enable();
-    }else if(btdb.protection==true){
-      protection_disable();
-    }
-  }else if(Bangle.isLCDOn()){
-    if(false){
-    }else{
-      btdb.state="idle";
-      start_clock();
+        protection_enable();
+      }else if(btdb.protection==true){
+        protection_disable();
+      }
+  }else{
+    stop_clock();
+    if(trigger=="btn1_long"){
+      sos();
+    }else if(btdb.state=="sos"){
+      if(trigger=="btn5"){
+        remove_sos();
+      }
+    }else if(Bangle.isLCDOn()){
+      if(false){
+      }else{
+        start_clock();
+        btdb.state="idle";
+      }
     }
   }
 }
