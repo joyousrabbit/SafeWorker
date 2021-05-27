@@ -36,7 +36,8 @@ function draw_clock(){
   g.setColor(0.9,0.1,0.6);
   g.fillRect(g.getWidth()/2-60, Y+58, g.getWidth()/2+60, Y+90);
   g.setColor(1,1,1);
-  g.drawString("SNCF", g.getWidth()/2, Y+90, false /*clear background*/);
+  g.setFont("Vector",32);
+  g.drawString("SNCF", g.getWidth()/2, Y+93, false /*clear background*/);
 }
 
 clock_interval = null;
