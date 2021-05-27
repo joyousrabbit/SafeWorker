@@ -15,7 +15,7 @@ function draw_clock(){
   const X = 210, Y = 140;
   var d = new Date();
   var h = d.getHours(), m = d.getMinutes();
-  var time = (" "+h).substr(-2) + ":" + ("0"+m).substr(-2);
+  var time = (" 0"+h).substr(-2) + ":" + ("0"+m).substr(-2);
   // Reset the state of the graphics library
   g.reset();
   // draw the current time (4x size 7 segment)
@@ -31,6 +31,12 @@ function draw_clock(){
   // pad the date - this clears the background if the date were to change length
   var dateStr = "    "+require("locale").date(d)+"    ";
   g.drawString(dateStr, g.getWidth()/2, Y+30, true /*clear background*/);
+  g.setFont("6x8",4);
+  //SNCF
+  g.setColor(0.9,0.1,0.6);
+  g.fillRect(g.getWidth()/2-60, Y+58, g.getWidth()/2+60, Y+90);
+  g.setColor(1,1,1);
+  g.drawString("SNCF", g.getWidth()/2, Y+90, false /*clear background*/);
 }
 
 clock_interval = null;
