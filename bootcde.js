@@ -65,6 +65,7 @@ function sos(){
   draw_sos();
   Bangle.buzz();
   btdb.state = "sos";
+  Bluetooth.println(JSON.stringify({t:"info", msg:"SOS"}));
 }
 function remove_sos(){
   clear_bkg();
