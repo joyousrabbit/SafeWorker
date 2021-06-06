@@ -290,5 +290,19 @@ Bangle.on('lcdPower',on=>{
   }
 });
 
+const _GB = global.GB;
+global.GB = (event) => {
+  switch(event.t) {
+    case "find": //GB({"t":"find",n:false})
+      var n = event.n;
+      Bangle.buzz();
+      break;
+    default:
+      if (_GB) {
+        setTimeout(_GB, 0, event);
+      }
+   }
+};
+
 Bangle.setLCDTimeout(5);
 behavior_tree("");
