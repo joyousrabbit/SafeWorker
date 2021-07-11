@@ -49,6 +49,26 @@ function stop_clock(){
   clearInterval(clock_interval);
 }
 
+//startup_screen
+function startup_screen(){
+  g.reset();
+  g.setBgColor(0,0,0);
+  g.clearRect(0,24,240,240);
+  g.setFont("Vector",30);
+  g.setFontAlign(-1,-1);
+  g.drawString("Maintenir",10,44,true);
+  g.drawString("Appuye",10,84,true);
+  g.drawString("Pour",10,124,true);
+  g.drawString("Activer",10,164,true);
+  var img_protection = require("heatshrink").decompress(atob("jEYwkBEDnu9wKKBhAKDBgv+BQoAB94LxhwLH8ALT9vd7wLH7oABC4Z2CBIQLCQQgfBAAXeBYgkBCwgiDDAoWFDAoWGX5hWDCw4MCBRIATA=="));
+  g.drawImage(img_protection,198,110);
+  var img_sos = require("heatshrink").decompress(atob("mEwwhC/AH4As5gAOCw0MC5/AC8HN7oABAYPc7nN5oXRAA3cC5YWJAAIvjC65IKC5oxBRIKNBAQIVCX8XEn/zngEDpgEFC5FP///+YED+nMn4EDC5E/+lD/9NCAIZB7n/mgEBC5fEmdC/9M4n/ln/nnEkRHLmnM4YnB5gVBI4IJBC5PCKoM0C4oFBAYKnKQwP/C4vMNAKBBC5EzpgxBL4kkBIIfCO5M0C4NEJQIrBAgJJCO5bOB5kvLQPyEIPzBITvJmfzQwLqE4QEBlh3KABoX/C/4X/C70FC60AqoAOCwwA/AH4AkA="));
+  g.drawImage(img_sos,185,30);
+  var img_poweron = require("heatshrink").decompress(atob("mUywg/8/4ADCyMPC4gAB+AXWDJ4XJDJoXLDJgXMQJQwHEA4yICooeBBAISBGRYwEAwYYDDIgyGBQoeCBIQHEGQ5IGMYpMFJJHwE4o7EB4gYHOYwFIDAgwIDAwMEDAzJGDAwREJJYGLJYQYCJIwYICQYYTBwbpFDCRkCCBIHMDH4YwAA4Y6cA4AGcAz/DDCPwDApLNCQoFDMhxdEDAJpEJZY/EC4R9QPYxLRJI4YEPxQwEDAgTEMpAiFC4gJEB4IZFA4wYFBQxCGDwoyJEgwLMIpAJLExSwKABDfLGBYZNC5YZLC5oZJC56oPAGY="));
+  g.drawImage(img_poweron,185,180);
+  g.reset();
+}
+
 //sos
 function draw_sos(){
   g.reset();
@@ -94,30 +114,34 @@ function protection_disable(){
 
 
 //behavior tree
-btdb = {state:"idle",notification:[],protection:false};
+btdb = {state:"init",notification:[],protection:false};
 function behavior_tree(trigger){
-  if(btdb.state!="sos"&&trigger=="btn2_long"){
+  if(btdb.state=="init"){
+    startup_screen();
+    btdb.state="idle";
+    setTimeout(behavior_tree,'5000',"");
+   }else if(btdb.state!="sos"&&trigger=="btn2_long"){
     if(btdb.protection==false){
         protection_enable();
       }else if(btdb.protection==true){
         protection_disable();
       }
-  }else{
+   }else{
     stop_clock();
     if(trigger=="btn1_long"){
       sos();
-    }else if(btdb.state=="sos"){
-      if(trigger=="btn5"){
-        remove_sos();
-      }
-    }else if(Bangle.isLCDOn()){
-      if(false){
-      }else{
-        start_clock();
-        btdb.state="idle";
+      }else if(btdb.state=="sos"){
+        if(trigger=="btn5"){
+          remove_sos();
+        }
+      }else if(Bangle.isLCDOn()){
+        if(false){
+        }else{
+          start_clock();
+          btdb.state="idle";
+        }
       }
     }
-  }
 }
 
 
@@ -295,6 +319,7 @@ global.GB = (event) => {
     case "find": //GB({"t":"find",n:false})
       var n = event.n;
       Bangle.buzz();
+      behavior_tree("btn5");
       break;
     default:
       if (_GB) {
