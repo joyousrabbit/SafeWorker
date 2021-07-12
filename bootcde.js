@@ -112,14 +112,33 @@ function protection_disable(){
   btdb.protection = false;
 }
 
+//sos_counting_down
+function start_sos_counting_down(){
+  btdb.state="sos_counting_down";
+  btdb.sos_counting = 10;
+}
+
+function show_sos_counting_down(){
+  //print(btdb.sos_counting);
+  g.reset();
+  g.setBgColor(1,0,0);
+  g.clearRect(0,24,240,240);
+  g.setFont("Vector",60);
+  g.setFontAlign(0,0);
+  g.drawString("SOS",100,56,true);
+  g.drawString(btdb.sos_counting.toString(),120,120,true);
+  g.drawString("x",200,200,true);
+  g.reset();
+}
+
 
 //behavior tree
-btdb = {state:"init",notification:[],protection:false};
+btdb = {state:"init",notification:[],protection:false,sos_counting:0};
 function behavior_tree(trigger){
   if(btdb.state=="init"){
     startup_screen();
     btdb.state="idle";
-    setTimeout(behavior_tree,'5000',"");
+    setTimeout(behavior_tree,5000,"");
    }else if(btdb.state!="sos"&&trigger=="btn2_long"){
     if(btdb.protection==false){
         protection_enable();
@@ -128,8 +147,20 @@ function behavior_tree(trigger){
       }
    }else{
     stop_clock();
-    if(trigger=="btn1_long"){
-      sos();
+      if(btdb.state=="sos_counting_down"){
+        if(trigger=="btn5"){
+          btdb.state="idle";
+          behavior_tree("");
+        }else if(btdb.sos_counting>0){
+          show_sos_counting_down();
+          btdb.sos_counting -= 1;
+          setTimeout(behavior_tree,1000,"");
+        }else if(btdb.sos_counting<=0){
+          sos();
+        }
+      }else if(trigger=="btn1_long"){
+      start_sos_counting_down();
+      behavior_tree("");
       }else if(btdb.state=="sos"){
         if(trigger=="btn5"){
           remove_sos();
