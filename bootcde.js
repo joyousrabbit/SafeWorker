@@ -14,35 +14,42 @@ gps_recent = NaN;
 
 // 1. AI model definition
 // 1.1. Standarisation values
-const mean_x = -0.1535140885519892, mean_y = -0.010161230784802246, mean_z = 0.2872841254429825;
-const std_x = 0.8197504207078723, std_y = 0.6164881629530853, std_z = 0.557908881549523;
+const mean_x = -0.2053098886401209, mean_y = 0.023619460890335627, mean_z = 0.28260046992700266;
+const std_x = 0.8873002285294816, std_y = 0.6182222631212975, std_z = 0.5292343705607759;
 // 1.2. Input parameters to the AI model
-var monitoring_control = -1;
-
-var i = 0;
-const n_steps = 12; // Number of records for the model
-const ratio = 2; // indicates that the model keeps steps at 1/ratio the frequency
-const ai_interval = 1; // AI model called every second
-const ai_call = Math.floor(ai_interval*n_steps);
+ms = 250;
+var HZ = Math.floor(1000/ms); // Watch frequency, for ms = 250 >> Hz = 4.
+const seconds = 3; // x seconds of data
+const n_steps = Math.floor(seconds*HZ); // Number of records for the model
+const ai_interval = 2; // AI model called every X second(s)
+const ai_call = Math.floor(ai_interval*HZ);
 const acc_thres = 0.5; // CRV Not implemented yet, acceleration threshold
-var HZ = 12.5; // Watch frequency
-var SCALE = 5000;
-var input = new Array(n_steps*3);
-var accelx = Array.apply(null);
-var accely = Array.apply(null);
-var accelz = Array.apply(null);
+var input = Array.apply(null);
+//var std_data = Array.apply(null);
+var lack_mov = Array.apply(null);
+var lack_mov_temp = Array.apply(null);
 var result = 0; // Prediction values
 var fall_monitor = 0;
+var lack_mov_time = 5; //5min of lack of movement
+var notify = false;
 
-// 1.3. The model
-var model=atob("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");
+function reset_model(){
+  input = Array.apply(null);
+  //std_data = Array.apply(null);
+  lack_mov = Array.apply(null);
+  lack_mov_temp = Array.apply(null);
+}
 
-
+// 1.3. The model (CRV: Model v18)
+var model=atob("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");
 var tf = require("tensorflow").create(3072, model);
-
 var prediction = {
   0: "ADL",
   1 : "FALL"
+};
+
+var arrayMaxIndex = function(array) {
+  return array.indexOf(Math.max.apply(null,array));
 };
 
 function StarndardDeviation(array)
@@ -63,99 +70,11 @@ function turn_off_acccelerometer(){
   Bangle.accelWr(0x18,0x0A); // accelerometer off
 }
 
-var arrayMaxIndex = function(array) {
-  return array.indexOf(Math.max.apply(null,array));
-};
-
 /// CALL AI MODEL
-//monitoring_control = -1  # Not execution of the ai model
-//monitoring_control = 0  # Ai model initialised
-//monitoring_control = 1  # Ai model running
-
 Bangle.on("accel", function(acc) {
-  if(monitoring_control>-1)//CRV Change to -1
-  {
-    if(monitoring_control==0)
-    {
-    i = monitoring_control;
-    monitoring_control = 1; // Ai model running
-    }
-    i++; // Index starts in 1
-    if(i%ratio == 0)
-    {
-    accelx.push((acc.x - mean_x)/std_x); // CRV Change the scale from here or move the standardisation
-    accely.push((acc.y - mean_y)/std_y);
-    accelz.push((acc.z - mean_z)/std_z);
-    }
-
-    //Calling the model
-    if (i % ai_call == 0 && accelx.length >= n_steps && btdb.state!="sos_counting_down" && btdb.state!="sos" && result != "FALL")
-    {
-      i = 0;
-
-      //Create input array
-      for (var ns = 0; ns < n_steps; ns++)
-      {
-        input[ns*3] = accelx[ns];
-        input[ns*3+1] = accely[ns];
-        input[ns*3+2] = accelz[ns];
-      }
-
-      //print("\n");
-      //print("INPUT TO MODEL");
-      //print("\n");
-      //print(input);
-      tf.getInput().set(input);
-      //print(tf.getInput());
-      tf.invoke();
-      var solution = tf.getOutput();
-      result = prediction[arrayMaxIndex(solution)];
-
-      //print("PREDICTION:");
-      //print("\n");
-      //print(result);
-      //print("\n");
-      if(result == "FALL")fall_monitor=Math.floor(HZ*3); // Monitor the fall for 3s
-      //Remove ai_call times the first element of the arrays
-      for (var cl = 0; cl < Math.floor(ai_call/ratio); cl++)
-      {
-      accelx.shift();
-      accely.shift();
-      accelz.shift();
-      }
-      //print('Cleaning ai_call amount of values');
-      //print(accelx);
-
-    }//End of calling the model
-
-    if(fall_monitor>0) 
-    {
-      fall_monitor-=1;
-      if(fall_monitor<=HZ*2 && fall_monitor>1)
-      {
-        std = StarndardDeviation(accelx);      
-        if(std<0.1)
-        {
-          //print(std);
-          fall_monitor = 0;
-          behavior_tree("ai_model");
-        }
-      }
-      if(fall_monitor<=1)result=0;
-      if(accelx.length > n_steps)
-      {
-      accelx.shift();
-      accely.shift();
-      accelz.shift();
-      }
-    } //CRV Comment out this part
-  }//End of saving data for the model
+   print('acc');
 });
-
 /// END CALL AI MODEL
-
-
-
 
 // 2. Clock
 require("Font7x11Numeric7Seg").add(Graphics);
@@ -238,7 +157,6 @@ function remove_sos(){
   clear_bkg();
   btdb.state="";
   behavior_tree("");
-  monitoring_control = 0;
 }
 
 // 5. protection (on-site bit)
@@ -255,10 +173,13 @@ function delete_protection_icon(){
 function protection_enable(){
   draw_protection_icon();
   btdb.protection = true;
+  reset_model();
+  turn_on_acccelerometer();
 }
 function protection_disable(){
   delete_protection_icon();
   btdb.protection = false;
+  turn_off_acccelerometer();
 }
 
 // 6. sos_counting_down
@@ -284,13 +205,12 @@ function show_sos_counting_down(){
 // 7. behavior tree
 btdb = {state:"init",notification:[],protection:false,sos_counting:0};
 function behavior_tree(trigger){
+  print(btdb.state+" "+trigger);
   if(btdb.state=="init"){
     if(trigger==""){
       startup_screen();
       btdb.state="idle";
-      monitoring_control = 0;
       setTimeout(behavior_tree,5000,"");
-      setTimeout(turn_on_acccelerometer,6000);
     }
    }else if(btdb.state!="sos"&&trigger=="btn2_long"){
     if(btdb.protection==false){
@@ -302,23 +222,21 @@ function behavior_tree(trigger){
       stop_clock();
       if(btdb.state=="sos_counting_down"){
         if(trigger=="btn5"){
-          monitoring_control = 0;
           btdb.state="idle";
           behavior_tree("");
-        }else if(btdb.sos_counting>0&&trigger==""){
+        }else if(btdb.sos_counting>0&&trigger=="counting_down"){
           show_sos_counting_down();
           btdb.sos_counting -= 1;
-          setTimeout(behavior_tree,1000,"");
-        }else if(btdb.sos_counting<=0&&trigger==""){
+          setTimeout(behavior_tree,1000,"counting_down");
+        }else if(btdb.sos_counting<=0&&trigger=="counting_down"){
           sos();
         }
       }else if(trigger=="btn1_long"){
         start_sos_counting_down(10);
-        behavior_tree("");
+        behavior_tree("counting_down");
       }else if(trigger=="ai_model"){
-        monitoring_control = -1;
         start_sos_counting_down(60);
-        behavior_tree("");
+        behavior_tree("counting_down");
       }else if(btdb.state=="sos"){
         if(trigger=="btn5"){
           remove_sos();
@@ -520,7 +438,7 @@ global.GB = (event) => {
    }
 };
 
-Bangle.setGPSPower(1);
+Bangle.setGPSPower(0);
 Bangle.on('GPS',function(gps) {
   gps_recent = gps;
 });
