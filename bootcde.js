@@ -113,7 +113,9 @@ function start_clock(){
   clock_interval = setInterval(draw_clock, 1000);
 }
 function stop_clock(){
-  clearInterval(clock_interval);
+  if(typeof clock_interval !== "undefined"){
+    clock_interval = clearInterval(clock_interval);
+  }
 }
 
 // 3. startup_screen
