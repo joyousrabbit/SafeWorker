@@ -24,17 +24,18 @@ const n_steps = Math.floor(seconds*HZ); // Number of records for the model
 const ai_interval = 2; // AI model called every X second(s)
 const ai_call = Math.floor(ai_interval*HZ);
 const acc_thres = 0.5; // CRV Not implemented yet, acceleration threshold
-var input = Array.apply(null);
+var ai_input = Array.apply(null);
 //var std_data = Array.apply(null);
 var lack_mov = Array.apply(null);
 var lack_mov_temp = Array.apply(null);
 var result = 0; // Prediction values
 var fall_monitor = 0;
+var lack_movement_control = true;
 var lack_mov_time = 5; //5min of lack of movement
 var notify = false;
 
 function reset_model(){
-  input = Array.apply(null);
+  ai_input = Array.apply(null);
   //std_data = Array.apply(null);
   lack_mov = Array.apply(null);
   lack_mov_temp = Array.apply(null);
@@ -72,7 +73,55 @@ function turn_off_acccelerometer(){
 
 /// CALL AI MODEL
 Bangle.on("accel", function(acc) {
-   print('acc');
+   // AI Model
+    ai_input.push((acc.x - mean_x)/std_x);
+    //input.push((acc.y - mean_y)/std_y);
+    ai_input.push((acc.z - mean_z)/std_z);
+
+    //Calling the model
+    if (ai_input.length >= n_steps*2){
+      tf.getInput().set(ai_input);
+      tf.invoke();
+      var solution = tf.getOutput();
+      result = prediction[arrayMaxIndex(solution)];
+
+      //Remove ai_call times the first element of the arrays
+      for (var cl = 0; cl < ai_call; cl++){
+        ai_input.shift();
+        //input.shift();
+        ai_input.shift();
+      }
+
+      if(result == "FALL"){
+        //fall_monitor=Math.floor(HZ*3); // Monitor the fall for 3s
+        ai_input = Array.apply(null);
+        behavior_tree("ai_sos");
+      }
+  }//End of saving data for the model
+
+  //Lack of movement detection
+  if(lack_movement_control){
+    //Save acc value 
+    lack_mov_temp.push(acc.x);
+    //Evaluate movement every 15s
+    if(lack_mov_temp.length >= HZ*15) {
+      //Calculate variation in movement
+      mov = StarndardDeviation(lack_mov_temp);  
+      lack_mov_temp = Array.apply(null);
+      if(mov<0.1){//If variation is low then the lack of movement is True
+        lack_mov.push(true);
+      }else{//If variation is high then the lack of movement is False
+        lack_mov.push(false);
+      }
+      //Evaluate if there are already the lack_mov_time min saved
+      if(lack_mov.length>=lack_mov_time*4){
+        if(lack_mov.filter(x => x).length == lack_mov.length){
+          behavior_tree("ai_sos");
+        }
+        lack_mov.shift();
+      }
+    }
+  }
 });
 /// END CALL AI MODEL
 
@@ -207,7 +256,7 @@ function show_sos_counting_down(){
 // 7. behavior tree
 btdb = {state:"init",notification:[],protection:false,sos_counting:0};
 function behavior_tree(trigger){
-  print(btdb.state+" "+trigger);
+  //print(btdb.state+" "+trigger);
   if(btdb.state=="init"){
     if(trigger==""){
       startup_screen();
@@ -233,7 +282,7 @@ function behavior_tree(trigger){
         }else if(btdb.sos_counting<=0&&trigger=="counting_down"){
           sos();
         }
-      }else if(trigger=="btn1_long"){
+      }else if(trigger=="btn1_long" || trigger=="ai_sos"){
         start_sos_counting_down(10);
         behavior_tree("counting_down");
       }else if(trigger=="ai_model"){
