@@ -252,14 +252,44 @@ function show_sos_counting_down(){
   g.reset();
 }
 
+// 7. GPS
+function draw_gps_icon(){
+  g.reset();
+  g.setFont("6x8",2);
+  g.drawString("GPS",56,2);
+}
+function delete_gps_icon(){
+  g.reset();
+  g.setColor(0,0,0);
+  g.fillRect(54, 0, 96, 24);
+}
+function gps_enable(){
+  draw_gps_icon();
+  //Bangle.setGPSPower(1);
+}
+function gps_disable(){
+  delete_gps_icon();
+  Bangle.setGPSPower(0);
+}
+function gps_timer(){
+  if(btdb.gps_counting>0){
+    gps_enable();
+    btdb.gps_counting -= 1;
+  }else if(btdb.state=="sos_counting_down" || btdb.state=="sos"){
+    gps_enable();
+  }else{
+    gps_disable();
+  }
+}
 
-// 7. behavior tree
-btdb = {state:"init",notification:[],protection:false,sos_counting:0};
+// 8. behavior tree
+btdb = {state:"init",notification:[],protection:false,sos_counting:0,gps_counting:10};
 function behavior_tree(trigger){
   //print(btdb.state+" "+trigger);
   if(btdb.state=="init"){
     if(trigger==""){
       startup_screen();
+      btdb.gps_counting = 10;
       btdb.state="idle";
       setTimeout(behavior_tree,5000,"");
     }
@@ -493,6 +523,8 @@ Bangle.setGPSPower(0);
 Bangle.on('GPS',function(gps) {
   gps_recent = gps;
 });
+gps_enable();
+setInterval(gps_timer, 5*1000);
 
 turn_off_acccelerometer();
 Bangle.setLCDTimeout(5);
