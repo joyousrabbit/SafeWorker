@@ -265,7 +265,7 @@ function delete_gps_icon(){
 }
 function gps_enable(){
   draw_gps_icon();
-  //Bangle.setGPSPower(1);
+  Bangle.setGPSPower(1);
 }
 function gps_disable(){
   delete_gps_icon();
@@ -277,16 +277,44 @@ function gps_timer(){
     btdb.gps_counting -= 1;
   }else if(btdb.state=="sos_counting_down" || btdb.state=="sos"){
     gps_enable();
+    var msg = "GPS";
+    if(btdb.state=="sos"){
+      msg = "SOS";
+    }
+    Bluetooth.println(JSON.stringify({t:"info", msg:msg, gps:gps_recent}));
   }else{
     gps_disable();
   }
 }
 
-// 8. behavior tree
-btdb = {state:"init",notification:[],protection:false,sos_counting:0,gps_counting:10};
+// 8. show call
+function show_call(){
+  g.reset();
+  g.setBgColor(0,0,1);
+  g.clearRect(0,24,240,240);
+  g.setFont("Vector",60);
+  g.setFontAlign(0,0);
+  g.drawString("Call In",120,120,true);
+  g.reset();
+  Bangle.setLCDPower(1);
+}
+
+function turn_off_call(){
+  btdb.calling = false;
+  behavior_tree("");
+}
+
+// 9. behavior tree
+btdb = {state:"init",notification:[],calling:false,protection:false,sos_counting:0,gps_counting:10};
 function behavior_tree(trigger){
   //print(btdb.state+" "+trigger);
-  if(btdb.state=="init"){
+  if(trigger=="call"){
+    stop_clock();
+    show_call();
+    btdb.calling = true;
+    Bangle.buzz(1000);
+    setTimeout(turn_off_call,10000);
+  }else if(btdb.state=="init"){
     if(trigger==""){
       startup_screen();
       btdb.gps_counting = 10;
@@ -324,15 +352,13 @@ function behavior_tree(trigger){
         }
       }else if(Bangle.isLCDOn()){
         if(false){
-        }else{
+        }else if(btdb.calling==false){
           start_clock();
           btdb.state="idle";
         }
       }
     }
 }
-
-
 
 //btn1
 function btn1_short(){
@@ -512,6 +538,11 @@ global.GB = (event) => {
       Bangle.buzz();
       behavior_tree("btn5");
       break;
+    case "call":
+      if(event.cmd=="incoming"){
+        behavior_tree("call");
+      }
+      break;
     default:
       if (_GB) {
         setTimeout(_GB, 0, event);
@@ -524,8 +555,8 @@ Bangle.on('GPS',function(gps) {
   gps_recent = gps;
 });
 gps_enable();
-setInterval(gps_timer, 5*1000);
+setInterval(gps_timer, 10*1000);
 
 turn_off_acccelerometer();
-Bangle.setLCDTimeout(5);
+Bangle.setLCDTimeout(10);
 behavior_tree("");
