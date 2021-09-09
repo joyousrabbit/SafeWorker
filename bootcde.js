@@ -104,7 +104,7 @@ Bangle.on("accel", function(acc) {
   }//End of saving data for the model
 
   //Lack of movement detection
-  if(lack_movement_control){
+  if(lack_movement_control && !Bangle.isCharging()){
     //Save acc value 
     lack_mov_temp.push(acc.x);
     //Evaluate movement every 15s
