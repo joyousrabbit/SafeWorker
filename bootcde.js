@@ -3,6 +3,8 @@ g.clear();
 // Load widgets
 Bangle.loadWidgets();
 Bangle.drawWidgets();
+ms = 250;
+Bangle.setPollInterval(ms);
 
 function clear_bkg(){
   g.setBgColor(0,0,0);
@@ -17,22 +19,24 @@ gps_recent = NaN;
 const mean_x = -0.2053098886401209, mean_y = 0.023619460890335627, mean_z = 0.28260046992700266;
 const std_x = 0.8873002285294816, std_y = 0.6182222631212975, std_z = 0.5292343705607759;
 // 1.2. Input parameters to the AI model
-ms = 250;
+
 var HZ = Math.floor(1000/ms); // Watch frequency, for ms = 250 >> Hz = 4.
 const seconds = 3; // x seconds of data
 const n_steps = Math.floor(seconds*HZ); // Number of records for the model
 const ai_interval = 2; // AI model called every X second(s)
 const ai_call = Math.floor(ai_interval*HZ);
-const acc_thres = 0.5; // CRV Not implemented yet, acceleration threshold
+
 var ai_input = Array.apply(null);
 //var std_data = Array.apply(null);
 var lack_mov = Array.apply(null);
 var lack_mov_temp = Array.apply(null);
 var result = 0; // Prediction values
 var fall_monitor = 0;
-var lack_movement_control = true;
+var lack_movement_control = false;
 var lack_mov_time = 5; //5min of lack of movement
 var notify = false;
+var mode = 0;
+var e_id = new Date();
 
 function reset_model(){
   ai_input = Array.apply(null);
@@ -198,13 +202,44 @@ function draw_sos(){
   g.drawString("x",200,200,true);
   g.reset();
 }
-function sos(){
+
+function sos_sms(event_id, sos_mode){
+  Bluetooth.println(JSON.stringify({
+      t:"notify",
+      id:event_id,
+      src:1,
+      sender:11,
+      title:0,
+      body:{
+        DetectionTimeStamp:event_id,
+        WatchID:11,
+        EventID:event_id,
+        Status:0,
+        Transmitter:1,
+        TransmitterID:11,
+        SOStriggerMode:sos_mode,
+        Location_time:gps_recent.time,
+        Lat:gps_recent.lat,
+        Lon:gps_recent.lon,
+        Altitude:gps_recent.alt,
+        OnSiteStatus:btdb.protection,
+        Detection:0,
+        Accx:0,
+        Accy:0,
+        Accz:0,
+        HeartBeat:0,
+      }}));
+}
+
+function sos(event_id, sos_mode){
   draw_sos();
   Bangle.buzz();
   btdb.state = "sos";
-  Bluetooth.println(JSON.stringify({t:"info", msg:"SOS", gps:gps_recent}));
+  //d.toLocaleString('en-GB', { timeZone: 'France/Paris'});
+  sos_sms(event_id, sos_mode);
 }
 function remove_sos(){
+  mode = 0;
   clear_bkg();
   btdb.state="";
   behavior_tree("");
@@ -221,15 +256,35 @@ function delete_protection_icon(){
   g.setColor(0,0,0);
   g.fillRect(28, 0, 52, 24);
 }
+
+function send_notification(protection){
+  t = 2;
+  if(protection)t = 0;
+  var n_id = new Date();
+  Bluetooth.println(JSON.stringify({
+    t:"notify",
+    id:	n_id,
+    src:1,
+    sender:	11,
+    title:2,
+    body:
+    {Message_type:t}
+  }));
+}
+
 function protection_enable(){
   draw_protection_icon();
   btdb.protection = true;
+  send_notification(btdb.protection);
+  lack_movement_control = true;
   reset_model();
   turn_on_acccelerometer();
 }
 function protection_disable(){
   delete_protection_icon();
   btdb.protection = false;
+  lack_movement_control = false;
+  send_notification(btdb.protection);
   turn_off_acccelerometer();
 }
 
@@ -277,11 +332,14 @@ function gps_timer(){
     btdb.gps_counting -= 1;
   }else if(btdb.state=="sos_counting_down" || btdb.state=="sos"){
     gps_enable();
-    var msg = "GPS";
+
     if(btdb.state=="sos"){
-      msg = "SOS";
+      sos_sms(e_id, mode);
     }
-    Bluetooth.println(JSON.stringify({t:"info", msg:msg, gps:gps_recent}));
+
+
+
+
   }else{
     gps_disable();
   }
@@ -305,7 +363,7 @@ function turn_off_call(){
 }
 
 // 9. behavior tree
-btdb = {state:"init",notification:[],calling:false,protection:false,sos_counting:0,gps_counting:10};
+btdb = {state:"init",notification:[],calling:false,protection:false,sos_counting:0,gps_counting:1};
 function behavior_tree(trigger){
   //print(btdb.state+" "+trigger);
   if(trigger=="call"){
@@ -317,7 +375,7 @@ function behavior_tree(trigger){
   }else if(btdb.state=="init"){
     if(trigger==""){
       startup_screen();
-      btdb.gps_counting = 10;
+      btdb.gps_counting = 1;
       btdb.state="idle";
       setTimeout(behavior_tree,5000,"");
     }
@@ -338,18 +396,24 @@ function behavior_tree(trigger){
           btdb.sos_counting -= 1;
           setTimeout(behavior_tree,1000,"counting_down");
         }else if(btdb.sos_counting<=0&&trigger=="counting_down"){
-          sos();
+          e_id = new Date();
+          sos(e_id, mode);
         }
-      }else if(trigger=="btn1_long" || trigger=="ai_sos"){
+      }else if(trigger=="btn1_long"){
+        mode = 1;
         start_sos_counting_down(10);
         behavior_tree("counting_down");
-      }else if(trigger=="ai_model"){
+      }else if(trigger=="ai_sos"){
+        mode = 2;
         start_sos_counting_down(60);
         behavior_tree("counting_down");
       }else if(btdb.state=="sos"){
         if(trigger=="btn5"){
           remove_sos();
         }
+      }else if(trigger=="btn_short"){
+        startup_screen();
+        setTimeout(behavior_tree,3000,"");
       }else if(Bangle.isLCDOn()){
         if(false){
         }else if(btdb.calling==false){
@@ -362,6 +426,7 @@ function behavior_tree(trigger){
 
 //btn1
 function btn1_short(){
+  behavior_tree('btn_short');
   //console.log('btn1 short');
 }
 function btn1_long(){
@@ -404,6 +469,7 @@ setWatch(function(e) {
 
 //btn2
 function btn2_short(){
+  behavior_tree('btn_short'); 
   //console.log('btn2 short');
 }
 function btn2_long(){
@@ -438,6 +504,7 @@ setWatch(function(e) {
 
 //btn3
 function btn3_short(){
+  behavior_tree('btn_short'); 
   //console.log('btn3 short');
 }
 setWatch(btn3_short, BTN3, { repeat:true, edge:'falling' });
@@ -555,7 +622,7 @@ Bangle.on('GPS',function(gps) {
   gps_recent = gps;
 });
 gps_enable();
-setInterval(gps_timer, 10*1000);
+setInterval(gps_timer, 30*1000);
 
 turn_off_acccelerometer();
 Bangle.setLCDTimeout(10);
